@@ -131,5 +131,38 @@ namespace HazeClue.UI.Controllers.v1
 
             return Ok(new { message = "Notification settings updated successfully." });
         }
+        [HttpGet("me/device-settings")]
+        public async Task<IActionResult> GetDeviceSettings()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var settings = await _context.DeviceSettings.FirstOrDefaultAsync(s => s.UserId == userId);
+            
+            if (settings == null)
+            {
+                // Return default settings if none exist
+                return Ok(new DeviceSetting { UserId = userId! });
+            }
+
+            return Ok(settings);
+        }
+
+        [HttpPut("me/device-settings")]
+        public async Task<IActionResult> UpdateDeviceSettings([FromBody] UpdateDeviceSettingsDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var settings = await _context.DeviceSettings.FirstOrDefaultAsync(s => s.UserId == userId);
+
+            if (settings == null)
+            {
+                settings = new DeviceSetting { UserId = userId! };
+                _context.DeviceSettings.Add(settings);
+            }
+
+            settings.IntensityLevel = dto.IntensityLevel;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Device settings updated successfully." });
+        }
     }
 }

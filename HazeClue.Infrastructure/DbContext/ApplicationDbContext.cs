@@ -19,6 +19,7 @@ namespace HazeClue.Infrastructure.DbContext
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<SecurityLog> SecurityLogs { get; set; }
         public DbSet<NotificationSetting> NotificationSettings { get; set; }
+        public DbSet<DeviceSetting> DeviceSettings { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
