@@ -60,6 +60,22 @@ namespace HazeClue.UI.Controllers.v1
             session.AverageConcentration = dto.AverageConcentration;
             session.ActualDurationSeconds = dto.ActualDurationSeconds;
             
+            // Create a notification for session completion
+            string durationText = dto.ActualDurationSeconds < 60 
+                ? $"{dto.ActualDurationSeconds} seconds" 
+                : $"{dto.ActualDurationSeconds / 60} minutes";
+
+            var notification = new HazeClue.Core.Domain.Entities.AppNotification
+            {
+                UserId = userId,
+                Title = "Session Completed! 🎉",
+                Message = $"Great job! You just completed a focus session lasting {durationText} with an average concentration of {dto.AverageConcentration}%.",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            _context.Notifications.Add(notification);
+
             await _context.SaveChangesAsync();
             return Ok(session);
         }
@@ -114,8 +130,7 @@ namespace HazeClue.UI.Controllers.v1
                 .Where(s => s.UserId == userId && s.Status == "completed")
                 .ToListAsync();
 
-            // Handle legacy data where ActualDurationSeconds might be 0 but DurationMinutes > 0
-            int totalFocusSeconds = sessions.Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+            int totalFocusSeconds = sessions.Sum(s => s.ActualDurationSeconds);
             var totalFocusMinutes = totalFocusSeconds / 60;
             
             var totalSessionsCount = sessions.Count;
@@ -134,7 +149,7 @@ namespace HazeClue.UI.Controllers.v1
                 var targetDate = DateTime.UtcNow.Date.AddDays(-i);
                 var dailySumSeconds = sessions
                     .Where(s => s.CreatedAt.Date == targetDate)
-                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                    .Sum(s => s.ActualDurationSeconds);
                 
                 weeklyData.Add(dailySumSeconds / 60);
                 currentWeekSeconds += dailySumSeconds;
@@ -145,7 +160,7 @@ namespace HazeClue.UI.Controllers.v1
                 var targetDate = DateTime.UtcNow.Date.AddDays(-i);
                 var dailySumSeconds = sessions
                     .Where(s => s.CreatedAt.Date == targetDate)
-                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                    .Sum(s => s.ActualDurationSeconds);
                 lastWeekSeconds += dailySumSeconds;
             }
 
@@ -166,13 +181,13 @@ namespace HazeClue.UI.Controllers.v1
                 var targetMonth = DateTime.UtcNow.Date.AddMonths(-i);
                 var monthlySumSeconds = sessions
                     .Where(s => s.CreatedAt.Year == targetMonth.Year && s.CreatedAt.Month == targetMonth.Month)
-                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                    .Sum(s => s.ActualDurationSeconds);
                 monthlyData.Add(monthlySumSeconds / 60);
             }
 
             return Ok(new
             {
-                totalFocusMinutes,
+                totalFocusSeconds,
                 averageMinutesPerDay,
                 overallAverageConcentration,
                 totalSessionsCount,
