@@ -22,15 +22,12 @@ namespace HazeClue.UI
 
             builder.Services.ConfigureServices(builder.Configuration);
 
-            // Configure CORS — restrict to known origins
+            // Configure CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecific", policy =>
                 {
-                    var allowedOrigins = builder.Configuration["AllowedOrigins"]
-                        ?? "http://localhost:3000,http://localhost:8080";
-                    
-                    policy.WithOrigins(allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    policy.SetIsOriginAllowed(origin => true) // Allow any origin (fixes Flutter Web random ports)
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
