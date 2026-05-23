@@ -22,18 +22,26 @@ namespace HazeClue.UI
 
             builder.Services.ConfigureServices(builder.Configuration);
 
-            // Configure CORS
+            // Configure CORS — restrict to known origins
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder =>
+                options.AddPolicy("AllowSpecific", policy =>
                 {
-                    builder.AllowAnyOrigin()
+                    var allowedOrigins = builder.Configuration["AllowedOrigins"]
+                        ?? "http://localhost:3000,http://localhost:8080";
+                    
+                    policy.WithOrigins(allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                            .AllowAnyMethod()
-                           .AllowAnyHeader();
+                           .AllowAnyHeader()
+                           .AllowCredentials();
                 });
             });
 
             builder.Services.AddSignalR();
+
+            // Health Checks
+            builder.Services.AddHealthChecks()
+                .AddDbContextCheck<HazeClue.Infrastructure.DbContext.ApplicationDbContext>();
 
             var app = builder.Build();
 
@@ -55,7 +63,7 @@ namespace HazeClue.UI
             app.UseHsts();
             app.UseHttpsRedirection();
 
-            app.UseCors("AllowAll"); // Apply CORS before routing
+            app.UseCors("AllowSpecific"); // Apply CORS before routing
 
             app.UseRouting();
 
@@ -65,6 +73,7 @@ namespace HazeClue.UI
 
             app.MapControllers();
             app.MapHub<HazeClue.UI.Hubs.SessionHub>("/sessionHub");
+            app.MapHealthChecks("/health");
 
             app.Run();
         }
