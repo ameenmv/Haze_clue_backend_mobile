@@ -20,6 +20,7 @@ namespace HazeClue.Infrastructure.DbContext
         public DbSet<SecurityLog> SecurityLogs { get; set; }
         public DbSet<NotificationSetting> NotificationSettings { get; set; }
         public DbSet<DeviceSetting> DeviceSettings { get; set; }
+        public DbSet<SmartwatchData> SmartwatchData { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
